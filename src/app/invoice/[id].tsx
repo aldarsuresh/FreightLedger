@@ -269,7 +269,7 @@ export default function InvoiceDetailScreen() {
                 📞 {firm?.phone || '9822012345'} {firm?.email ? `| ✉ ${firm.email}` : ''}
               </Text>
               <Text style={styles.sheetFirmGst}>
-                <strong>GSTIN:</strong> {firm?.gstin || '27AABCS1234F1Z8'} &nbsp;|&nbsp; <strong>PAN:</strong> {firm?.pan || 'AABCS1234F'}
+                <Text style={styles.sheetBold}>GSTIN:</Text> {firm?.gstin || '27AABCS1234F1Z8'} | <Text style={styles.sheetBold}>PAN:</Text> {firm?.pan || 'AABCS1234F'}
               </Text>
             </View>
 
@@ -306,16 +306,16 @@ export default function InvoiceDetailScreen() {
             <View style={styles.sheetPartyCol}>
               <Text style={styles.sheetSectionTitle}>SERVICE DETAILS</Text>
               <Text style={styles.sheetServiceText}>
-                <strong>SAC Code:</strong> 996511
+                <Text style={styles.sheetBold}>SAC Code:</Text> 996511
               </Text>
               <Text style={styles.sheetServiceSub}>
                 Goods Transport Services by Road (GTA)
               </Text>
               <Text style={styles.sheetServiceText}>
-                <strong>Total Billed Trips:</strong> {invoice.lineItems.length}
+                <Text style={styles.sheetBold}>Total Billed Trips:</Text> {invoice.lineItems.length}
               </Text>
               <Text style={styles.sheetServiceText}>
-                <strong>Place of Supply:</strong> {customer?.state ?? 'Maharashtra'}
+                <Text style={styles.sheetBold}>Place of Supply:</Text> {customer?.state ?? 'Maharashtra'}
               </Text>
             </View>
           </View>
@@ -364,7 +364,7 @@ export default function InvoiceDetailScreen() {
             <View style={styles.sheetRcmNotice}>
               <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#C2410C" />
               <Text style={styles.sheetRcmNoticeText}>
-                <strong>RCM Notice:</strong> GST liability is payable by recipient under Section 9(3) of CGST Act. The GTA is not liable to pay GST.
+                <Text style={styles.sheetBold}>RCM Notice:</Text> GST liability is payable by recipient under Section 9(3) of CGST Act. The GTA is not liable to pay GST.
               </Text>
             </View>
           )}
@@ -377,14 +377,14 @@ export default function InvoiceDetailScreen() {
               <View style={styles.sheetBankBox}>
                 <Text style={styles.sheetBankTitle}>BANK PAYMENT DETAILS</Text>
                 <Text style={styles.sheetBankText}>
-                  Bank: <strong>{firm?.bankDetails?.bankName || 'HDFC Bank Ltd'}</strong>
+                  Bank: <Text style={styles.sheetBold}>{firm?.bankDetails?.bankName || 'HDFC Bank Ltd'}</Text>
                   {firm?.bankDetails?.branchName ? ` (${firm.bankDetails.branchName})` : ''}
                 </Text>
                 <Text style={styles.sheetBankText}>
-                  A/C: <strong>{firm?.bankDetails?.accountNumber || '50200012345678'}</strong>
+                  A/C: <Text style={styles.sheetBold}>{firm?.bankDetails?.accountNumber || '50200012345678'}</Text>
                 </Text>
                 <Text style={styles.sheetBankText}>
-                  IFSC: <strong>{firm?.bankDetails?.ifscCode || 'HDFC0000123'}</strong>
+                  IFSC: <Text style={styles.sheetBold}>{firm?.bankDetails?.ifscCode || 'HDFC0000123'}</Text>
                 </Text>
               </View>
             </View>
@@ -574,6 +574,9 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#1E40AF',
     marginTop: 2,
+  },
+  sheetBold: {
+    fontWeight: '800',
   },
   sheetInvBadgeBox: {
     alignItems: 'flex-end',
