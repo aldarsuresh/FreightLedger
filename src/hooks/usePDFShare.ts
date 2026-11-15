@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
-import { generatePDF, sharePDF } from '../services/pdf/pdfService';
+import { generatePDF, sharePDF, previewPDF } from '../services/pdf/pdfService';
 import { generateLRHTML } from '../services/pdf/lrTemplate';
 import { generateInvoiceHTML } from '../services/pdf/invoiceTemplate';
 import { FirmProfile } from '../types/firm.types';
@@ -20,6 +20,51 @@ export function usePDFShare() {
       return undefined;
     }
   };
+
+  const previewInvoice = useCallback(async (
+    firm: FirmProfile,
+    invoice: Invoice,
+    customer: Party,
+  ) => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const logoBase64 = await toBase64(firm.logoUri);
+      const signatureBase64 = await toBase64(firm.signatureUri);
+      const html = generateInvoiceHTML({ firm, invoice, customer, logoBase64, signatureBase64 });
+      await previewPDF(html);
+    } catch (e: any) {
+      console.error('[PDF] Error in previewInvoice:', e);
+      const msg = e?.message ?? 'Failed to preview PDF';
+      setError(msg);
+      throw e;
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
+
+  const previewLR = useCallback(async (
+    firm: FirmProfile,
+    trip: Trip,
+    customer: Party,
+    vendor: Party,
+  ) => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const logoBase64 = await toBase64(firm.logoUri);
+      const signatureBase64 = await toBase64(firm.signatureUri);
+      const html = generateLRHTML({ firm, trip, customer, vendor, logoBase64, signatureBase64 });
+      await previewPDF(html);
+    } catch (e: any) {
+      console.error('[PDF] Error in previewLR:', e);
+      const msg = e?.message ?? 'Failed to preview LR PDF';
+      setError(msg);
+      throw e;
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
 
   const shareLR = useCallback(async (
     firm: FirmProfile,
@@ -72,5 +117,5 @@ export function usePDFShare() {
     }
   }, []);
 
-  return { shareLR, shareInvoice, isGenerating, error };
+  return { shareLR, shareInvoice, previewInvoice, previewLR, isGenerating, error };
 }

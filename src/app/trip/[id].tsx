@@ -465,7 +465,7 @@ export default function TripDetailScreen() {
               <Text style={styles.dLabel}>Driver Phone</Text>
               <TouchableOpacity
                 onPress={() =>
-                  trip.driverPhone ? Linking.openURL(`tel:${trip.driverPhone}`) : null
+                  trip.driverPhone ? Linking.openURL(`tel:${trip.driverPhone}`).catch(() => {}) : null
                 }
               >
                 <Text style={[styles.dVal, { color: Colors.primary }]}>
@@ -509,7 +509,7 @@ export default function TripDetailScreen() {
             {customer?.phone && (
               <TouchableOpacity
                 style={styles.partyCallBtn}
-                onPress={() => Linking.openURL(`tel:${customer.phone}`)}
+                onPress={() => Linking.openURL(`tel:${customer.phone}`).catch(() => {})}
               >
                 <MaterialCommunityIcons name="phone" size={16} color={Colors.primary} />
               </TouchableOpacity>
@@ -527,7 +527,7 @@ export default function TripDetailScreen() {
             {vendor?.phone && (
               <TouchableOpacity
                 style={styles.partyCallBtn}
-                onPress={() => Linking.openURL(`tel:${vendor.phone}`)}
+                onPress={() => Linking.openURL(`tel:${vendor.phone}`).catch(() => {})}
               >
                 <MaterialCommunityIcons name="phone" size={16} color={Colors.primary} />
               </TouchableOpacity>

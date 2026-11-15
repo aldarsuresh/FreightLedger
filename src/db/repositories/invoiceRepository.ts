@@ -2,6 +2,16 @@ import { getDatabase } from '../database';
 import { Invoice } from '../../types/invoice.types';
 import { toISO } from '../../utils/dateUtils';
 
+function safeParse<T>(val: any, fallback: T): T {
+  if (!val) return fallback;
+  if (typeof val !== 'string') return val;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return fallback;
+  }
+}
+
 function rowToInvoice(row: any): Invoice {
   return {
     id: row.id,
@@ -9,8 +19,8 @@ function rowToInvoice(row: any): Invoice {
     invoiceNumber: row.invoice_number,
     invoiceDate: row.invoice_date,
     customerId: row.customer_id,
-    tripIds: JSON.parse(row.trip_ids),
-    lineItems: JSON.parse(row.line_items),
+    tripIds: safeParse(row.trip_ids, []),
+    lineItems: safeParse(row.line_items, []),
     gstMode: row.gst_mode,
     subtotal: row.subtotal,
     cgst: row.cgst,

@@ -142,6 +142,10 @@ export async function sharePDF(
   }
 }
 
+export async function previewPDF(html: string): Promise<void> {
+  await Print.printAsync({ html });
+}
+
 export async function shareOnWhatsApp(uri: string, fileName: string, fallbackUri?: string): Promise<void> {
   await sharePDF(uri, fileName, 'Share Digital LR PDF', fallbackUri);
 }

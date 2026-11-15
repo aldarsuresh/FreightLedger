@@ -47,8 +47,8 @@ export async function saveFirmProfile(firm: FirmProfile): Promise<void> {
     [
       firm.id, firm.firmName, firm.gstin, firm.pan, firm.address,
       firm.city, firm.state, firm.pincode, firm.phone, firm.email ?? null,
-      firm.bankDetails.accountNumber, firm.bankDetails.ifscCode,
-      firm.bankDetails.bankName, firm.bankDetails.branchName ?? null,
+      firm.bankDetails?.accountNumber ?? '', firm.bankDetails?.ifscCode ?? '',
+      firm.bankDetails?.bankName ?? '', firm.bankDetails?.branchName ?? null,
       firm.lrPrefix, firm.currentLrSequence,
       firm.logoUri ?? null, firm.signatureUri ?? null,
       firm.createdAt ?? now, now,

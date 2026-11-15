@@ -17,79 +17,192 @@ export function generateInvoiceHTML(params: InvoiceTemplateParams): string {
   const { firm, invoice, customer, logoBase64, signatureBase64 } = params;
   const logoSrc = logoBase64 ? `data:image/png;base64,${logoBase64}` : '';
   const sigSrc = signatureBase64 ? `data:image/png;base64,${signatureBase64}` : '';
-  const isRCM = invoice.gstMode === 'RCM';
+  const gstMode = invoice?.gstMode || 'RCM';
+  const isRCM = gstMode === 'RCM';
 
-  const lineItemsHTML = invoice.lineItems.map((item: InvoiceLineItem, i: number) => `
+  const firmName = firm?.firmName || 'Shivaji Roadlines & Logistics';
+  const firmAddress = firm?.address || 'Shop No. 14, Transport Nagar, Nigdi';
+  const firmCity = firm?.city || 'Pune';
+  const firmState = firm?.state || 'Maharashtra';
+  const firmPincode = firm?.pincode || '411019';
+  const firmPhone = firm?.phone || '9822012345';
+  const firmEmail = firm?.email || '';
+  const firmGstin = firm?.gstin || '27AABCS1234F1Z8';
+  const firmPan = firm?.pan || 'AABCS1234F';
+
+  const bankName = firm?.bankDetails?.bankName || 'HDFC Bank Ltd';
+  const branchName = firm?.bankDetails?.branchName ? ` (${firm.bankDetails.branchName})` : '';
+  const accountNumber = firm?.bankDetails?.accountNumber || '50200012345678';
+  const ifscCode = firm?.bankDetails?.ifscCode || 'HDFC0000123';
+
+  const custName = customer?.companyName || 'Billed Customer';
+  const custContact = customer?.contactPerson || 'Accounts Dept';
+  const custPhone = customer?.phone || '';
+  const custAddress = customer?.address ? `${customer.address}, ` : '';
+  const custCity = customer?.city || '';
+  const custState = customer?.state || '';
+  const custGstin = customer?.gstin || '';
+
+  const lineItems = invoice?.lineItems || [];
+  const lineItemsHTML = lineItems.map((item: InvoiceLineItem, i: number) => `
     <tr>
       <td>${i + 1}</td>
-      <td class="left">${item.lrNumber}</td>
-      <td>${formatDate(item.lrDate)}</td>
-      <td>${item.vehicleNumber}</td>
-      <td>${item.origin}</td>
-      <td>${item.destination}</td>
-      <td class="left">${item.description}</td>
-      <td class="right">${formatINR(item.amount)}</td>
+      <td class="left">${item?.lrNumber || '-'}</td>
+      <td>${formatDate(item?.lrDate)}</td>
+      <td>${item?.vehicleNumber || '-'}</td>
+      <td>${item?.origin || '-'}</td>
+      <td>${item?.destination || '-'}</td>
+      <td class="left">${item?.description || 'Freight Transportation Services'}</td>
+      <td class="right">${formatINR(item?.amount || 0)}</td>
     </tr>
   `).join('');
+
+  const gstLabel = GST_MODE_LABELS[gstMode] || gstMode;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>Tax Invoice - ${invoice.invoiceNumber}</title>
+<title>Tax Invoice - ${invoice?.invoiceNumber || 'INV'}</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #111; padding: 12px; }
-  .page { width: 100%; max-width: 740px; margin: 0 auto; border: 2px solid #1565C0; }
-  .header { display: flex; align-items: center; padding: 10px 14px; border-bottom: 2px solid #1565C0; background: #EEF4FF; }
-  .logo-wrap { width: 68px; height: 68px; margin-right: 12px; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; }
-  .logo-wrap img { width: 100%; object-fit: contain; }
-  .logo-placeholder { font-size: 20px; font-weight: 900; color: #1565C0; }
-  .firm-info { flex: 1; }
-  .firm-name { font-size: 17px; font-weight: 900; color: #1565C0; text-transform: uppercase; }
-  .firm-sub { font-size: 10px; color: #333; margin-top: 2px; }
-  .inv-box { text-align: right; }
-  .inv-title { font-size: 15px; font-weight: 900; color: #1565C0; border: 2px solid #1565C0; padding: 3px 10px; border-radius: 4px; }
-  .inv-num { font-size: 13px; font-weight: 700; margin-top: 4px; }
-  .inv-date { font-size: 10px; color: #555; }
-  .rcm-badge { background: #FF6F00; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 4px; }
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  html, body {
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, Helvetica, sans-serif;
+    font-size: 9px;
+    line-height: 1.3;
+    color: #0f172a;
+    background: #ffffff;
+  }
+  .page {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    border: 1.5px solid #1565C0;
+    border-radius: 2px;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1.5px solid #1565C0;
+    background: #F0F6FF;
+    page-break-inside: avoid;
+  }
+  .logo-wrap {
+    width: 58px;
+    height: 58px;
+    margin-right: 10px;
+    border: 1px solid #94A3B8;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-placeholder { font-size: 22px; font-weight: 900; color: #1565C0; }
+  .firm-info { flex: 1; min-width: 0; }
+  .firm-name { font-size: 15px; font-weight: 900; color: #1565C0; text-transform: uppercase; letter-spacing: 0.3px; }
+  .firm-sub { font-size: 8.5px; color: #334155; margin-top: 1px; }
+  .inv-box { text-align: right; flex-shrink: 0; }
+  .inv-title { font-size: 13px; font-weight: 900; color: #1565C0; border: 1.5px solid #1565C0; padding: 2px 8px; border-radius: 3px; display: inline-block; }
+  .inv-num { font-size: 11px; font-weight: 800; margin-top: 3px; color: #0f172a; }
+  .inv-date { font-size: 8.5px; color: #475569; margin-top: 1px; }
+  .rcm-badge { background: #EA580C; color: #fff; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 8px; display: inline-block; margin-top: 3px; }
   
-  .title-bar { background: #1565C0; color: #fff; text-align: center; padding: 5px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .title-bar {
+    background: #1565C0;
+    color: #fff;
+    text-align: center;
+    padding: 3px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    page-break-inside: avoid;
+  }
   
-  .bill-row { display: flex; border-bottom: 1px solid #1565C0; }
-  .bill-col { flex: 1; padding: 8px 12px; }
+  .bill-row {
+    display: flex;
+    border-bottom: 1px solid #1565C0;
+    page-break-inside: avoid;
+  }
+  .bill-col { flex: 1; padding: 6px 10px; }
   .bill-col:first-child { border-right: 1px solid #1565C0; }
-  .col-title { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #1565C0; border-bottom: 1px dashed #aaa; padding-bottom: 3px; margin-bottom: 5px; }
-  .col-name { font-size: 12px; font-weight: 700; }
-  .col-detail { font-size: 10px; color: #333; margin-top: 2px; }
+  .col-title { font-size: 7.5px; font-weight: 800; text-transform: uppercase; color: #1565C0; border-bottom: 1px dashed #94A3B8; padding-bottom: 2px; margin-bottom: 3px; letter-spacing: 0.5px; }
+  .col-name { font-size: 11px; font-weight: 800; color: #0f172a; }
+  .col-detail { font-size: 8.5px; color: #334155; margin-top: 1px; }
 
-  .items-table { width: 100%; border-collapse: collapse; }
-  .items-table th { background: #1565C0; color: #fff; padding: 5px 7px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
-  .items-table td { padding: 6px 7px; border-bottom: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; font-size: 10px; text-align: center; }
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: avoid;
+  }
+  .items-table th { background: #1565C0; color: #fff; padding: 4px 6px; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+  .items-table td { padding: 4px 6px; border-bottom: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; font-size: 8.5px; text-align: center; }
+  .items-table tbody tr:nth-child(even) { background-color: #F8FAFC; }
   .items-table td.left { text-align: left; }
-  .items-table td.right { text-align: right; font-weight: 600; }
-  .items-table tfoot td { font-weight: 700; background: #f5f7fa; border-top: 2px solid #1565C0; }
+  .items-table td.right { text-align: right; font-weight: 700; }
+  .items-table tfoot td { font-weight: 800; background: #F1F5F9; border-top: 1.5px solid #1565C0; padding: 4px 6px; }
 
-  .totals-section { display: flex; border-top: 1px solid #1565C0; }
-  .totals-left { flex: 1; padding: 10px 12px; border-right: 1px solid #1565C0; }
-  .totals-right { width: 220px; padding: 8px 12px; }
-  .total-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #ddd; font-size: 10px; }
-  .total-row.grand { font-size: 13px; font-weight: 900; color: #1565C0; border-top: 2px solid #1565C0; border-bottom: none; padding-top: 5px; }
-  .words-box { margin-top: 8px; padding: 6px; background: #E3F2FD; border-radius: 4px; font-size: 10px; font-weight: 600; font-style: italic; }
+  .rcm-note {
+    background: #FFF7ED;
+    border-top: 1px solid #FED7AA;
+    border-bottom: 1px solid #FED7AA;
+    padding: 4px 10px;
+    font-size: 8px;
+    color: #9A3412;
+    page-break-inside: avoid;
+  }
+
+  .totals-section {
+    display: flex;
+    border-bottom: 1px solid #1565C0;
+    page-break-inside: avoid;
+  }
+  .totals-left { flex: 1; padding: 6px 10px; border-right: 1px solid #1565C0; }
+  .totals-right { width: 210px; padding: 6px 10px; flex-shrink: 0; }
+  .total-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dashed #E2E8F0; font-size: 8.5px; }
+  .total-row.grand { font-size: 11px; font-weight: 900; color: #1565C0; border-top: 1.5px solid #1565C0; border-bottom: none; padding-top: 4px; margin-top: 2px; }
+  .words-box { padding: 4px 6px; background: #EFF6FF; border-radius: 3px; font-size: 8.5px; font-weight: 600; font-style: italic; color: #1E40AF; }
   
-  .bank-section { padding: 8px 12px; border-top: 1px solid #1565C0; display: flex; align-items: flex-start; }
-  .bank-title { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #1565C0; margin-bottom: 4px; }
-  .bank-detail { font-size: 10px; }
-  
-  .sig-row { display: flex; border-top: 1px solid #1565C0; }
-  .sig-col { flex: 1; padding: 10px 12px; text-align: center; }
-  .sig-col:not(:last-child) { border-right: 1px solid #1565C0; }
-  .sig-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
-  .sig-img { max-height: 40px; }
-  .sig-line { border-top: 1px solid #333; margin-top: 10px; padding-top: 3px; font-size: 8px; }
-  
-  .footer { background: #1565C0; color: #fff; text-align: center; padding: 5px; font-size: 8px; }
-  .rcm-note { background: #FFF3E0; border-left: 3px solid #FF6F00; padding: 5px 10px; font-size: 9px; color: #333; margin: 0; }
+  .bottom-section {
+    display: flex;
+    border-bottom: 1px solid #1565C0;
+    page-break-inside: avoid;
+  }
+  .bottom-bank { flex: 1; padding: 6px 10px; border-right: 1px solid #1565C0; }
+  .bottom-sig { width: 220px; padding: 6px 10px; text-align: center; flex-shrink: 0; }
+  .bank-title { font-size: 8px; font-weight: 800; text-transform: uppercase; color: #1565C0; margin-bottom: 3px; }
+  .bank-detail { font-size: 8.5px; color: #1e293b; line-height: 1.35; }
+  .sig-title { font-size: 8px; font-weight: 800; text-transform: uppercase; color: #1565C0; }
+  .sig-box { height: 34px; margin: 2px 0; display: flex; align-items: center; justify-content: center; }
+  .sig-img { max-height: 32px; max-width: 110px; }
+  .sig-line { border-top: 1px solid #64748B; padding-top: 2px; font-size: 7.5px; color: #475569; }
+
+  .footer {
+    background: #1565C0;
+    color: #fff;
+    text-align: center;
+    padding: 3px 6px;
+    font-size: 7.5px;
+    page-break-inside: avoid;
+  }
 </style>
 </head>
 <body>
@@ -97,20 +210,20 @@ export function generateInvoiceHTML(params: InvoiceTemplateParams): string {
 
   <div class="header">
     <div class="logo-wrap">
-      ${logoSrc ? `<img src="${logoSrc}" alt="Logo"/>` : `<span class="logo-placeholder">${firm.firmName.charAt(0)}</span>`}
+      ${logoSrc ? `<img src="${logoSrc}" alt="Logo"/>` : `<span class="logo-placeholder">${firmName.charAt(0)}</span>`}
     </div>
     <div class="firm-info">
-      <div class="firm-name">${firm.firmName}</div>
+      <div class="firm-name">${firmName}</div>
       <div class="firm-sub">Goods Transport Agency (GTA) / Transport Commission Agent</div>
-      <div class="firm-sub">${firm.address}, ${firm.city}, ${firm.state} - ${firm.pincode}</div>
-      <div class="firm-sub">📞 ${firm.phone}${firm.email ? ` | ✉ ${firm.email}` : ''}</div>
-      <div class="firm-sub"><strong>GSTIN:</strong> ${firm.gstin} &nbsp;|&nbsp; <strong>PAN:</strong> ${firm.pan}</div>
+      <div class="firm-sub">${firmAddress}, ${firmCity}, ${firmState} - ${firmPincode}</div>
+      <div class="firm-sub">📞 ${firmPhone}${firmEmail ? ` | ✉ ${firmEmail}` : ''}</div>
+      <div class="firm-sub"><strong>GSTIN:</strong> ${firmGstin} &nbsp;|&nbsp; <strong>PAN:</strong> ${firmPan}</div>
     </div>
     <div class="inv-box">
       <div class="inv-title">TAX INVOICE</div>
-      <div class="inv-num"># ${invoice.invoiceNumber}</div>
-      <div class="inv-date">Date: ${formatDate(invoice.invoiceDate)}</div>
-      <div class="rcm-badge">${GST_MODE_LABELS[invoice.gstMode]}</div>
+      <div class="inv-num"># ${invoice?.invoiceNumber || '-'}</div>
+      <div class="inv-date">Date: ${formatDate(invoice?.invoiceDate)}</div>
+      <div class="rcm-badge">${gstLabel}</div>
     </div>
   </div>
 
@@ -119,16 +232,16 @@ export function generateInvoiceHTML(params: InvoiceTemplateParams): string {
   <div class="bill-row">
     <div class="bill-col">
       <div class="col-title">Bill To / बिल पाठवणारा</div>
-      <div class="col-name">${customer.companyName}</div>
-      <div class="col-detail">Contact: ${customer.contactPerson} | 📞 ${customer.phone}</div>
-      <div class="col-detail">${customer.address ?? ''}, ${customer.city}, ${customer.state}</div>
-      ${customer.gstin ? `<div class="col-detail"><strong>GSTIN:</strong> ${customer.gstin}</div>` : ''}
+      <div class="col-name">${custName}</div>
+      <div class="col-detail">Contact: ${custContact} ${custPhone ? `| 📞 ${custPhone}` : ''}</div>
+      <div class="col-detail">${custAddress}${custCity}, ${custState}</div>
+      ${custGstin ? `<div class="col-detail"><strong>GSTIN:</strong> ${custGstin}</div>` : ''}
     </div>
     <div class="bill-col">
       <div class="col-title">Service Provider / सेवा प्रदाता</div>
-      <div class="col-name">${firm.firmName}</div>
-      <div class="col-detail">${firm.address}, ${firm.city}, ${firm.state} - ${firm.pincode}</div>
-      <div class="col-detail"><strong>GSTIN:</strong> ${firm.gstin}</div>
+      <div class="col-name">${firmName}</div>
+      <div class="col-detail">${firmAddress}, ${firmCity}, ${firmState} - ${firmPincode}</div>
+      <div class="col-detail"><strong>GSTIN:</strong> ${firmGstin}</div>
       <div class="col-detail"><strong>SAC Code:</strong> 996511 (Road Transport)</div>
     </div>
   </div>
@@ -136,70 +249,63 @@ export function generateInvoiceHTML(params: InvoiceTemplateParams): string {
   <table class="items-table">
     <thead>
       <tr>
-        <th>#</th>
-        <th>LR No.</th>
-        <th>LR Date</th>
-        <th>Vehicle No.</th>
-        <th>From</th>
-        <th>To</th>
-        <th style="text-align:left">Description</th>
-        <th>Amount</th>
+        <th style="width:25px;">#</th>
+        <th style="width:75px;">LR No.</th>
+        <th style="width:70px;">LR Date</th>
+        <th style="width:80px;">Vehicle No.</th>
+        <th style="width:65px;">From</th>
+        <th style="width:65px;">To</th>
+        <th style="text-align:left;">Description</th>
+        <th style="width:75px;text-align:right;">Amount</th>
       </tr>
     </thead>
     <tbody>${lineItemsHTML}</tbody>
     <tfoot>
       <tr>
-        <td colspan="7" style="text-align:right; font-weight:700;">Subtotal</td>
-        <td class="right">${formatINR(invoice.subtotal)}</td>
+        <td colspan="7" style="text-align:right; font-weight:800;">Subtotal</td>
+        <td class="right">${formatINR(invoice?.subtotal || 0)}</td>
       </tr>
     </tfoot>
   </table>
 
-  ${isRCM ? `<div class="rcm-note">⚠️ <strong>Note:</strong> This supply is subject to <strong>Reverse Charge Mechanism (RCM)</strong> under Section 9(3) of the CGST Act, 2017. The liability to pay GST is on the recipient of services. The supplier (GTA) is NOT liable to pay GST.</div>` : ''}
+  ${isRCM ? `<div class="rcm-note">⚠️ <strong>Note:</strong> This supply is subject to <strong>Reverse Charge Mechanism (RCM)</strong> under Section 9(3) of the CGST Act, 2017. Liability to pay GST is on the recipient of services. GTA is NOT liable to pay GST.</div>` : ''}
 
   <div class="totals-section">
     <div class="totals-left">
-      <div class="words-box">Amount in Words: <em>${invoice.amountInWords}</em></div>
+      <div class="words-box">Amount in Words: <em>${invoice?.amountInWords || ''}</em></div>
       ${!isRCM ? `
-      <div style="margin-top:8px; font-size:9px; color:#555;">
-        <strong>HSN/SAC:</strong> 996511 — Goods Transport Services by Road<br/>
-        <strong>GST Mode:</strong> ${GST_MODE_LABELS[invoice.gstMode]}
+      <div style="margin-top:4px; font-size:8px; color:#475569;">
+        <strong>HSN/SAC:</strong> 996511 — Goods Transport Services by Road &nbsp;|&nbsp; <strong>GST Mode:</strong> ${gstLabel}
       </div>` : ''}
     </div>
     <div class="totals-right">
-      <div class="total-row"><span>Subtotal</span><span>${formatINR(invoice.subtotal)}</span></div>
-      ${invoice.cgst > 0 ? `<div class="total-row"><span>CGST</span><span>${formatINR(invoice.cgst)}</span></div>` : ''}
-      ${invoice.sgst > 0 ? `<div class="total-row"><span>SGST</span><span>${formatINR(invoice.sgst)}</span></div>` : ''}
-      ${invoice.igst > 0 ? `<div class="total-row"><span>IGST</span><span>${formatINR(invoice.igst)}</span></div>` : ''}
-      ${isRCM ? `<div class="total-row"><span>GST (RCM)</span><span>₹0 (Payable by Receiver)</span></div>` : ''}
-      <div class="total-row grand"><span>GRAND TOTAL</span><span>${formatINR(invoice.grandTotal)}</span></div>
+      <div class="total-row"><span>Subtotal</span><span>${formatINR(invoice?.subtotal || 0)}</span></div>
+      ${(invoice?.cgst || 0) > 0 ? `<div class="total-row"><span>CGST</span><span>${formatINR(invoice.cgst)}</span></div>` : ''}
+      ${(invoice?.sgst || 0) > 0 ? `<div class="total-row"><span>SGST</span><span>${formatINR(invoice.sgst)}</span></div>` : ''}
+      ${(invoice?.igst || 0) > 0 ? `<div class="total-row"><span>IGST</span><span>${formatINR(invoice.igst)}</span></div>` : ''}
+      ${isRCM ? `<div class="total-row"><span>GST (RCM)</span><span>₹0 (By Recipient)</span></div>` : ''}
+      <div class="total-row grand"><span>GRAND TOTAL</span><span>${formatINR(invoice?.grandTotal || 0)}</span></div>
     </div>
   </div>
 
-  <div class="bank-section">
-    <div>
-      <div class="bank-title">Payment Details / बँक तपशील</div>
-      <div class="bank-detail">Bank: <strong>${firm.bankDetails.bankName}</strong>${firm.bankDetails.branchName ? ` (${firm.bankDetails.branchName})` : ''}</div>
-      <div class="bank-detail">A/C No.: <strong>${firm.bankDetails.accountNumber}</strong> &nbsp;|&nbsp; IFSC: <strong>${firm.bankDetails.ifscCode}</strong></div>
-      <div class="bank-detail" style="margin-top:4px; color:#C62828; font-weight:600;">Please include Invoice No. ${invoice.invoiceNumber} in payment reference.</div>
+  <div class="bottom-section">
+    <div class="bottom-bank">
+      <div class="bank-title">Payment Remittance Details / बँक तपशील</div>
+      <div class="bank-detail">Bank: <strong>${bankName}</strong>${branchName}</div>
+      <div class="bank-detail">A/C No.: <strong>${accountNumber}</strong> &nbsp;|&nbsp; IFSC: <strong>${ifscCode}</strong></div>
+      <div class="bank-detail" style="margin-top:2px; color:#B91C1C; font-weight:700;">Please include Invoice No. ${invoice?.invoiceNumber || ''} in payment reference.</div>
     </div>
-  </div>
-
-  <div class="sig-row">
-    <div class="sig-col">
-      <span class="sig-label">Receiver Acknowledgement</span>
-      <div style="height:40px;border:1px dashed #aaa;margin:4px 0;"></div>
-      <div class="sig-line">Date: _____________ Stamp &amp; Sign</div>
-    </div>
-    <div class="sig-col">
-      <span class="sig-label">For ${firm.firmName}</span>
-      ${sigSrc ? `<img src="${sigSrc}" class="sig-img" alt="Sig"/>` : `<div style="height:40px;border:1px dashed #aaa;margin:4px 0;"></div>`}
-      <div class="sig-line">Authorized Signatory</div>
+    <div class="bottom-sig">
+      <div class="sig-title">For ${firmName}</div>
+      <div class="sig-box">
+        ${sigSrc ? `<img src="${sigSrc}" class="sig-img" alt="Sig"/>` : `<div style="height:26px;"></div>`}
+      </div>
+      <div class="sig-line">Authorized Signatory &amp; Stamp</div>
     </div>
   </div>
 
   <div class="footer">
-    This is a computer-generated Tax Invoice | ${firm.firmName} | GSTIN: ${firm.gstin} | Generated: ${formatDateShort(new Date().toISOString())}
+    This is a computer-generated GST Tax Invoice | ${firmName} | GSTIN: ${firmGstin} | Generated: ${formatDateShort(new Date().toISOString())}
   </div>
 </div>
 </body>

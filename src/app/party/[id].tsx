@@ -74,10 +74,12 @@ export default function PartyDetailScreen() {
   );
 
   const callPhone = () => {
+    if (!party?.phone) return;
     Linking.openURL(`tel:${party.phone}`).catch(() => {});
   };
 
   const whatsappPhone = () => {
+    if (!party?.phone) return;
     const clean = party.phone.replace(/[^0-9]/g, '');
     const num = clean.startsWith('91') ? clean : `91${clean}`;
     Linking.openURL(`https://wa.me/${num}`).catch(() => {});
