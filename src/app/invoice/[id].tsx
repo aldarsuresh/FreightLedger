@@ -61,18 +61,63 @@ export default function InvoiceDetailScreen() {
   }, [loadData]);
 
   const handleShareInvoice = async () => {
-    if (!invoice || !customer) return;
-    const currentFirm = firm ?? (await getFirmProfile());
-    if (!currentFirm) {
-      Alert.alert(
-        'Firm Profile Required',
-        'Please complete your broker firm details before generating PDFs.',
-        [{ text: 'Go to Settings', onPress: () => router.push('/onboarding') }]
-      );
+    if (!invoice) {
+      Alert.alert('Error', 'Invoice details are still loading.');
       return;
     }
 
-    await shareInvoice(currentFirm, invoice, customer);
+    try {
+      let cust = customer;
+      if (!cust && invoice.customerId) {
+        cust = await getPartyById(invoice.customerId);
+        if (cust) setCustomer(cust);
+      }
+
+      const effectiveCustomer: Party = cust ?? {
+        id: invoice.customerId,
+        partyType: 'CUSTOMER',
+        companyName: 'Billed Customer',
+        contactPerson: 'Accounts Dept',
+        phone: '',
+        city: 'Local',
+        state: 'State',
+        isActive: true,
+        isDirty: false,
+        createdAt: invoice.createdAt,
+        updatedAt: invoice.updatedAt,
+      };
+
+      let currentFirm = firm ?? (await getFirmProfile());
+      if (!currentFirm) {
+        currentFirm = {
+          id: 'default-firm',
+          firmName: 'Shivaji Roadlines & Logistics',
+          gstin: '27AABCS1234F1Z8',
+          pan: 'AABCS1234F',
+          address: 'Shop No. 14, Transport Nagar, Nigdi',
+          city: 'Pune',
+          state: 'Maharashtra',
+          pincode: '411019',
+          phone: '9822012345',
+          email: 'contact@shivajiroadlines.in',
+          bankDetails: {
+            accountNumber: '50200012345678',
+            ifscCode: 'HDFC0000123',
+            bankName: 'HDFC Bank Ltd',
+            branchName: 'Nigdi Pradhikaran, Pune',
+          },
+          lrPrefix: 'SRL-2026-',
+          currentLrSequence: 100,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      await shareInvoice(currentFirm, invoice, effectiveCustomer);
+    } catch (e: any) {
+      console.error('Invoice share error:', e);
+      Alert.alert('Error', e?.message || 'Failed to generate or share Invoice PDF');
+    }
   };
 
   const handleTogglePaid = async () => {
@@ -126,7 +171,7 @@ export default function InvoiceDetailScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Share on WhatsApp Button */}
         <TouchableOpacity
-          style={styles.shareBtn}
+          style={[styles.shareBtn, isGenerating && { opacity: 0.6 }]}
           onPress={handleShareInvoice}
           disabled={isGenerating}
           activeOpacity={0.8}

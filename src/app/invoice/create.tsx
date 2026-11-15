@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { generateUUID } from '../../utils/uuid';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
 import { usePartyStore } from '../../store/partyStore';
@@ -22,6 +22,7 @@ import { saveInvoice, getNextInvoiceNumber } from '../../db/repositories/invoice
 import { formatINR, amountToWords } from '../../utils/currency';
 import { formatDate, toISO } from '../../utils/dateUtils';
 import { GSTMode, GST_MODE_LABELS, GST_RATES } from '../../constants/gstRates';
+import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS } from '../../constants/tripStatus';
 import { Trip } from '../../types/trip.types';
 import { Party } from '../../types/party.types';
 import { Invoice, InvoiceLineItem } from '../../types/invoice.types';
@@ -39,36 +40,46 @@ export default function CreateInvoiceScreen() {
   const [loadingTrips, setLoadingTrips] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (parties.length === 0) {
-      getAllParties().then(setParties);
-    }
-  }, [parties.length, setParties]);
+  // Reload parties whenever the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      getAllParties().then((list) => {
+        setParties(list);
+      });
+    }, [setParties])
+  );
 
   const customers = parties.filter((p) => p.partyType === 'CUSTOMER' && p.isActive);
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
 
-  // Load trips when customer changes
-  useEffect(() => {
-    if (!selectedCustomerId) {
+  // Load billable trips when customer changes or screen refocuses
+  const loadCustomerTrips = useCallback(async (customerId: string) => {
+    if (!customerId) {
       setCustomerTrips([]);
       setSelectedTripIds([]);
       return;
     }
 
     setLoadingTrips(true);
-    getTripsByCustomer(selectedCustomerId)
-      .then((trips) => {
-        // Show trips that have POD received or are delivered, but not yet billed
-        const billable = trips.filter(
-          (t) => t.status === 'POD_RECEIVED' || t.status === 'DELIVERED'
-        );
-        setCustomerTrips(billable);
-        // Default select all billable trips
-        setSelectedTripIds(billable.map((t) => t.id));
-      })
-      .finally(() => setLoadingTrips(false));
-  }, [selectedCustomerId]);
+    try {
+      const trips = await getTripsByCustomer(customerId);
+      // Include all unbilled trips (IN_TRANSIT, DELIVERED, POD_RECEIVED)
+      const billable = trips.filter(
+        (t) => !t.invoiceId && t.status !== 'BILLED'
+      );
+      setCustomerTrips(billable);
+      // Default select all billable trips
+      setSelectedTripIds(billable.map((t) => t.id));
+    } catch (e) {
+      console.error('Error fetching customer trips for invoice:', e);
+    } finally {
+      setLoadingTrips(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCustomerTrips(selectedCustomerId);
+  }, [selectedCustomerId, loadCustomerTrips]);
 
   const toggleTripSelection = (tripId: string) => {
     setSelectedTripIds((prev) =>
@@ -259,12 +270,18 @@ export default function CreateInvoiceScreen() {
               <View style={styles.emptyTrips}>
                 <MaterialCommunityIcons
                   name="truck-check-outline"
-                  size={32}
+                  size={36}
                   color={Colors.textMuted}
                 />
                 <Text style={styles.emptyTripsText}>
-                  No unbilled POD_RECEIVED or DELIVERED trips for this customer.
+                  No unbilled trips found for this customer.
                 </Text>
+                <TouchableOpacity
+                  style={styles.createTripBtn}
+                  onPress={() => router.push('/trip/create')}
+                >
+                  <Text style={styles.createTripBtnText}>+ Create Trip for Customer</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               customerTrips.map((t) => {
@@ -283,7 +300,19 @@ export default function CreateInvoiceScreen() {
                     />
                     <View style={{ flex: 1 }}>
                       <View style={styles.tripItemHeader}>
-                        <Text style={styles.tLr}>{t.lrNumber}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.tLr}>{t.lrNumber}</Text>
+                          <View
+                            style={[
+                              styles.statusTag,
+                              { backgroundColor: TRIP_STATUS_COLORS[t.status] },
+                            ]}
+                          >
+                            <Text style={styles.statusTagText}>
+                              {TRIP_STATUS_LABELS[t.status]}
+                            </Text>
+                          </View>
+                        </View>
                         <Text style={styles.tDate}>{formatDate(t.date)}</Text>
                       </View>
                       <Text style={styles.tRoute}>
@@ -299,8 +328,8 @@ export default function CreateInvoiceScreen() {
           </View>
         ) : null}
 
-        {/* Step 3: GST Configuration */}
-        {selectedTripIds.length > 0 && (
+        {/* Step 3: GST Configuration & Summary */}
+        {selectedCustomerId && customerTrips.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>3. GST Rate & Tax Scheme</Text>
 
@@ -384,13 +413,22 @@ export default function CreateInvoiceScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.generateBtn, submitting && { opacity: 0.6 }]}
+              style={[
+                styles.generateBtn,
+                (submitting || selectedTripIds.length === 0) && { opacity: 0.6 },
+              ]}
               onPress={handleGenerateInvoice}
-              disabled={submitting}
+              disabled={submitting || selectedTripIds.length === 0}
             >
               <MaterialCommunityIcons name="file-pdf-box" size={22} color="#fff" />
               <Text style={styles.generateBtnText}>
-                {submitting ? 'Generating Invoice...' : 'Generate 1-Click Tax Invoice'}
+                {submitting
+                  ? 'Generating Invoice...'
+                  : selectedTripIds.length === 0
+                  ? 'Select at least 1 trip above'
+                  : `Generate 1-Click Tax Invoice (${selectedTripIds.length} Trip${
+                      selectedTripIds.length > 1 ? 's' : ''
+                    })`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -449,6 +487,14 @@ const styles = StyleSheet.create({
   scSub: { fontSize: 10, color: Colors.textSecondary, marginTop: 2 },
   emptyTrips: { alignItems: 'center', paddingVertical: 20, gap: 6 },
   emptyTripsText: { fontSize: FontSizes.xs, color: Colors.textMuted, textAlign: 'center' },
+  createTripBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 6,
+  },
+  createTripBtnText: { color: '#fff', fontSize: FontSizes.xs, fontWeight: '700' },
   tripItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -460,8 +506,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tripItemActive: { backgroundColor: Colors.primaryLight },
-  tripItemHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+  tripItemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   tLr: { fontSize: FontSizes.xs, fontWeight: '800', color: Colors.primary },
+  statusTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  statusTagText: { color: '#fff', fontSize: 8, fontWeight: '700' },
   tDate: { fontSize: 9, color: Colors.textMuted },
   tRoute: { fontSize: 10, color: Colors.textPrimary, fontWeight: '600', marginTop: 1 },
   tMaterial: { fontSize: 9, color: Colors.textSecondary },

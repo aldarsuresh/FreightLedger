@@ -66,11 +66,31 @@ export async function saveInvoice(invoice: Invoice): Promise<void> {
 export async function getNextInvoiceNumber(): Promise<string> {
   const db = await getDatabase();
   const year = new Date().getFullYear();
-  const row = await db.getFirstAsync<{ count: number }>(
-    `SELECT COUNT(*) as count FROM invoices
-     WHERE invoice_date >= ? AND invoice_date < ?;`,
-    [`${year}-01-01`, `${year + 1}-01-01`]
+  const rows = await db.getAllAsync<{ invoice_number: string }>(
+    `SELECT invoice_number FROM invoices WHERE invoice_number LIKE ?;`,
+    [`INV-${year}-%`]
   );
-  const seq = String((row?.count ?? 0) + 1).padStart(3, '0');
-  return `INV-${year}-${seq}`;
+  let maxSeq = 0;
+  for (const r of rows) {
+    const parts = r.invoice_number.split('-');
+    const num = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(num) && num > maxSeq) {
+      maxSeq = num;
+    }
+  }
+  let nextSeq = maxSeq + 1;
+  let candidate = `INV-${year}-${String(nextSeq).padStart(3, '0')}`;
+
+  while (true) {
+    const existing = await db.getFirstAsync<{ count: number }>(
+      'SELECT COUNT(*) as count FROM invoices WHERE invoice_number = ?;',
+      [candidate]
+    );
+    if (!existing || existing.count === 0) {
+      break;
+    }
+    nextSeq++;
+    candidate = `INV-${year}-${String(nextSeq).padStart(3, '0')}`;
+  }
+  return candidate;
 }
