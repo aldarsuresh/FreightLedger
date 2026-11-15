@@ -1,0 +1,7 @@
+{
+  "dashboard": { "title": "डैशबोर्ड", "totalReceivable": "कुल प्राप्य", "totalPayable": "कुल देय", "netCommission": "शुद्ध लाभ", "pendingPOD": "लंबित POD" },
+  "trips": { "title": "यात्राएं", "createTrip": "नई यात्रा", "noTrips": "कोई यात्रा नहीं" },
+  "parties": { "title": "पक्षकार", "createParty": "पक्षकार जोड़ें", "customer": "ग्राहक", "vendor": "वाहन स्वामी" },
+  "invoices": { "title": "इनवॉइस", "createInvoice": "नया इनवॉइस" },
+  "common": { "save": "सहेजें", "cancel": "रद्द करें", "delete": "हटाएं", "edit": "संपादित करें", "share": "साझा करें", "generate": "उत्पन्न करें", "search": "खोजें...", "loading": "लोड हो रहा है...", "error": "कुछ गलत हुआ" }
+}

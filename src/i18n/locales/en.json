@@ -1,0 +1,7 @@
+{
+  "dashboard": { "title": "Dashboard", "totalReceivable": "Total Receivable", "totalPayable": "Total Payable", "netCommission": "Net Commission", "pendingPOD": "Pending POD" },
+  "trips": { "title": "Trips", "createTrip": "Create Trip", "noTrips": "No trips yet. Create your first trip!" },
+  "parties": { "title": "Parties", "createParty": "Add Party", "customer": "Customer", "vendor": "Vendor" },
+  "invoices": { "title": "Invoices", "createInvoice": "New Invoice" },
+  "common": { "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit", "share": "Share", "generate": "Generate", "search": "Search...", "loading": "Loading...", "error": "Something went wrong" }
+}

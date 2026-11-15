@@ -1,0 +1,7 @@
+{
+  "dashboard": { "title": "डॅशबोर्ड", "totalReceivable": "येणे बाकी", "totalPayable": "देणे बाकी", "netCommission": "निव्वळ नफा", "pendingPOD": "प्रलंबित POD" },
+  "trips": { "title": "ट्रिप्स", "createTrip": "नवीन ट्रिप", "noTrips": "कोणतीही ट्रिप नाही" },
+  "parties": { "title": "पक्षकार", "createParty": "पक्षकार जोडा", "customer": "ग्राहक", "vendor": "वाहन मालक" },
+  "invoices": { "title": "इनव्हॉइस", "createInvoice": "नवीन इनव्हॉइस" },
+  "common": { "save": "जतन करा", "cancel": "रद्द करा", "delete": "हटवा", "edit": "संपादित करा", "share": "शेअर करा", "generate": "तयार करा", "search": "शोधा...", "loading": "लोड होत आहे...", "error": "काहीतरी चुकले" }
+}
